@@ -1,0 +1,58 @@
+name: materialize-npm-lock
+
+on:
+  push:
+    branches: [audit/npm-lock-reproducibility]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: materialize-npm-lock-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  materialize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout branch for one-shot generated lock commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: true
+          ref: audit/npm-lock-reproducibility
+      - name: Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Generate npm lock without running install scripts
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Validate root pins and install-script allowlist
+        run: |
+          node <<'NODE'
+          const lock = JSON.parse(require('node:fs').readFileSync('package-lock.json', 'utf8'));
+          if (lock.lockfileVersion !== 3) throw new Error('npm lockfileVersion must be 3');
+          const root = lock.packages[''];
+          if (root.dependencies?.astro !== '7.3.3') throw new Error('astro root pin drift');
+          if (root.devDependencies?.['@astrojs/check'] !== '0.9.4') throw new Error('@astrojs/check root pin drift');
+          if (root.devDependencies?.typescript !== '5.9.2') throw new Error('typescript root pin drift');
+          const allowed = new Set(['node_modules/esbuild@0.28.2', 'node_modules/fsevents@2.3.3']);
+          const actual = new Set(Object.entries(lock.packages)
+            .filter(([, value]) => value.hasInstallScript)
+            .map(([name, value]) => `${name}@${value.version}`));
+          if (actual.size !== allowed.size || [...actual].some((entry) => !allowed.has(entry))) {
+            throw new Error(`unexpected install-script packages: ${[...actual].join(', ')}`);
+          }
+          NODE
+      - name: Commit npm-generated lock if absent or changed
+        run: |
+          set -euo pipefail
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo 'package-lock.json already matches npm output'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'commit npm-generated marketing lockfile'
+          git push origin HEAD:audit/npm-lock-reproducibility
