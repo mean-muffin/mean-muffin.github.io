@@ -1,0 +1,183 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+
+const features = [
+  {
+    icon: '✦',
+    title: 'Suggest 5–10 snippets',
+    copy: 'Generate context-aware reply options from the page, selected text, thread history, and your workspace voice. Copy one, edit it, or start from scratch.',
+  },
+  {
+    icon: '↳',
+    title: 'Autofill the right values',
+    copy: 'Turn URL and DOM context into a reviewed autofill plan for forms, replies, notes, and repetitive browser workflows.',
+  },
+  {
+    icon: '◎',
+    title: 'Capture page data automatically',
+    copy: 'Save authorized conversation and page context to the Mean Muffin backend so teams can track activity without duplicate manual entry.',
+  },
+  {
+    icon: '◇',
+    title: 'Use the model that fits',
+    copy: 'Route suggestions and embeddings through OpenAI, Gemini, or Anthropic under workspace-level provider policy.',
+  },
+];
+
+const steps = [
+  ['01', 'Open the page', 'Work where the conversation already lives. Mean Muffin reads only the page context admitted by the extension workflow.'],
+  ['02', 'Choose an action', 'Generate replies, plan an autofill, capture context, or sync a conversation back to your workspace.'],
+  ['03', 'Review before writing', 'Human-driven mode keeps the final action in your hands; automation can be constrained by tenant and workflow policy.'],
+];
+---
+<SiteLayout>
+  <header class="site-header shell">
+    <a class="brand" href="/" aria-label="Mean Muffin home">
+      <img src="/mean-muffin-mark.svg" width="46" height="46" alt="" />
+      <span>Mean<span>Muffin</span></span>
+    </a>
+    <nav aria-label="Primary navigation">
+      <a href="#features">Features</a>
+      <a href="#workflow">How it works</a>
+      <a href="#ai">AI</a>
+      <a href="/privacy">Privacy</a>
+    </nav>
+    <a class="button button-dark header-cta" href="https://github.com/mean-muffin/mm-chrome-extension">View extension <span>↗</span></a>
+  </header>
+
+  <main>
+    <section class="hero shell">
+      <div class="hero-copy">
+        <div class="eyebrow"><span></span> Conversation operations for marketing & sales</div>
+        <h1>Smarter conversations.<br /><em>Bigger results.</em></h1>
+        <p class="lede">Mean Muffin helps teams manage comments and conversations across the web with AI-powered reply suggestions, smart autofill, browser automation, and structured data sync.</p>
+        <div class="hero-actions">
+          <a class="button button-orange" href="https://github.com/mean-muffin/mm-chrome-extension">Get the Chrome extension <span>↗</span></a>
+          <a class="button button-quiet" href="#workflow">See how it works <span>↓</span></a>
+        </div>
+        <div class="trust-row">
+          <span>✓ Human review</span><span>✓ Multi-tenant</span><span>✓ Works across the web</span>
+        </div>
+      </div>
+
+      <div class="hero-visual" aria-label="Mean Muffin browser extension product mockup">
+        <div class="muffin-burst">
+          <img src="/mean-muffin-mark.svg" alt="Mean Muffin mascot" width="190" height="190" />
+        </div>
+        <div class="browser-card">
+          <div class="browser-top"><i></i><i></i><i></i><span>community.example / conversations</span></div>
+          <div class="browser-body">
+            <aside class="feed">
+              <div class="profile-row"><div class="avatar">S</div><div><strong>Sarah Chen</strong><small>Marketing Director · 2h</small></div></div>
+              <p>“This is a valuable perspective. I’d love to hear more about how your team handles the workflow.”</p>
+              <div class="reactions">♡ 24 &nbsp;&nbsp; ◌ 8 replies</div>
+              <div class="reply-field">Write a reply…</div>
+            </aside>
+            <aside class="extension-panel">
+              <div class="extension-head"><span class="mini-brand"><img src="/mean-muffin-mark.svg" alt="" /> Mean Muffin</span><b>×</b></div>
+              <div class="tabs"><b>Reply</b><span>Autofill</span><span>Capture</span></div>
+              <small>Suggested replies</small>
+              <button>Great point — we’ve seen a similar pattern with our customers. <span>⧉</span></button>
+              <button>That’s a useful question. Here’s how we approach it today… <span>⧉</span></button>
+              <button>I’d add one thing: the workflow matters as much as the tooling. <span>⧉</span></button>
+              <button>Thanks for sharing — happy to compare notes. <span>⧉</span></button>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="feature-strip">
+      <div class="shell feature-grid">
+        {features.map((feature) => (
+          <article>
+            <div class="feature-icon">{feature.icon}</div>
+            <h2>{feature.title}</h2>
+            <p>{feature.copy}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section id="workflow" class="workflow shell section-pad">
+      <div class="section-heading">
+        <div class="eyebrow"><span></span> Less busywork</div>
+        <h2>Stay in the conversation.<br /><em>Let the workflow follow.</em></h2>
+        <p>Mean Muffin is designed around the browser instead of forcing your team to copy every interaction into another dashboard first.</p>
+      </div>
+      <div class="workflow-grid">
+        <div class="steps">
+          {steps.map(([num, title, copy]) => (
+            <article class="step">
+              <strong>{num}</strong>
+              <div><h3>{title}</h3><p>{copy}</p></div>
+            </article>
+          ))}
+        </div>
+        <div class="capture-card">
+          <div class="capture-label">PAGE CONTEXT</div>
+          <div class="context-line"><span>URL</span><code>/thread/growth-playbook</code></div>
+          <div class="context-line"><span>Workspace</span><code>Acme Growth</code></div>
+          <div class="context-line"><span>Actor</span><code>sarah@team</code></div>
+          <div class="context-line"><span>Action</span><code>suggest_replies</code></div>
+          <div class="capture-success">✓ Context admitted · ready for review</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="ai" class="dark-section">
+      <div class="shell dark-grid">
+        <div>
+          <div class="eyebrow eyebrow-light"><span></span> Provider-aware AI</div>
+          <h2>One workflow.<br /><em>Multiple intelligence providers.</em></h2>
+          <p>Use OpenAI, Gemini, and Anthropic for reply generation and embeddings without pushing provider credentials into the browser. Provider selection belongs to workspace policy and server-side execution.</p>
+          <div class="provider-row"><span>OpenAI</span><span>Gemini</span><span>Anthropic</span></div>
+        </div>
+        <div class="policy-panel">
+          <div class="code-head"><i></i><i></i><i></i><b>workspace policy</b></div>
+          <pre><code>tenant_id       = "growth-team"
+workspace_id    = "north-america"
+
+suggestions {
+  count         = 5..10
+  human_review  = true
+}
+
+providers {
+  openai        = true
+  gemini        = true
+  anthropic     = true
+}
+
+browser_secrets = false</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="teams shell section-pad">
+      <div class="section-heading center">
+        <div class="eyebrow"><span></span> Built for teams</div>
+        <h2>Turn comment sections into a<br /><em>managed operating surface.</em></h2>
+      </div>
+      <div class="team-grid">
+        <article><b>Marketing</b><p>Keep brand voice consistent, move quickly through community conversations, and preserve context for future campaigns.</p></article>
+        <article><b>Sales</b><p>Capture relevant discussions, accelerate thoughtful follow-up, and keep conversation history attached to the right workspace.</p></article>
+        <article><b>RevOps</b><p>Define tenant boundaries, provider policy, audit-friendly capture flows, and repeatable browser automations without exposing server credentials.</p></article>
+      </div>
+    </section>
+
+    <section class="cta-shell shell">
+      <div class="cta-card">
+        <img src="/mean-muffin-mark.svg" width="150" height="150" alt="Mean Muffin mascot" />
+        <div><p class="eyebrow eyebrow-light">Ready to get mean?</p><h2>Less tab-juggling.<br /><em>More conversations that convert.</em></h2></div>
+        <a class="button button-orange" href="https://github.com/mean-muffin/mm-chrome-extension">Explore the extension <span>↗</span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="shell site-footer">
+    <a class="brand" href="/"><img src="/mean-muffin-mark.svg" width="36" height="36" alt="" /><span>Mean<span>Muffin</span></span></a>
+    <div><a href="#features">Features</a><a href="/privacy">Privacy</a><a href="/security">Security</a><a href="https://github.com/mean-muffin">GitHub</a></div>
+    <small>© {new Date().getFullYear()} Mean Muffin.</small>
+  </footer>
+</SiteLayout>

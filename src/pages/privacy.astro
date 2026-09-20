@@ -1,0 +1,17 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+---
+<SiteLayout title="Privacy — Mean Muffin" description="Mean Muffin privacy principles for browser context, conversation data, and AI provider processing.">
+  <header class="site-header shell"><a class="brand" href="/"><img src="/mean-muffin-mark.svg" width="46" height="46" alt="" /><span>Mean<span>Muffin</span></span></a><a class="button button-quiet" href="/">← Home</a></header>
+  <main class="legal shell section-pad">
+    <div class="eyebrow"><span></span> Privacy</div>
+    <h1>Browser context should be<br /><em>handled deliberately.</em></h1>
+    <p class="legal-intro">This page describes Mean Muffin’s intended privacy architecture. Product deployments should keep this policy synchronized with the behavior actually shipped in the extension and backend.</p>
+    <section><h2>What Mean Muffin may process</h2><p>When a user invokes an admitted workflow, Mean Muffin may process page URL/title, selected text, relevant page or DOM context, form metadata, conversation content, and workspace identifiers needed to perform that action. Workflows should minimize capture to what the user or workspace policy authorizes.</p></section>
+    <section><h2>What the browser should not hold</h2><p>OpenAI, Gemini, Anthropic, database, object-storage, and other server credentials must not be shipped in the browser extension. Provider calls and privileged persistence belong behind authenticated server boundaries.</p></section>
+    <section><h2>Multi-tenant isolation</h2><p>Tenant and workspace identity must come from authenticated authority, not merely from values found on a page. Browser content is untrusted input and must not establish authorization.</p></section>
+    <section><h2>AI providers</h2><p>Workspace policy may route admitted content to OpenAI, Gemini, or Anthropic for suggestions or embeddings. The selected provider and data sent to it should be visible in product/admin policy and minimized for the requested workflow.</p></section>
+    <section><h2>Automation and human review</h2><p>Human-driven workflows should keep the final browser action under user control. Automated workflows should be explicitly enabled and bounded by tenant, target site, action type, and audit policy.</p></section>
+    <section><h2>Contact and changes</h2><p>Until a dedicated privacy contact is published, report privacy issues through the Mean Muffin GitHub organization. Material product changes should be reflected here before or alongside release.</p></section>
+  </main>
+</SiteLayout>

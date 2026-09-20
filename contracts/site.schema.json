@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mean-muffin.github.io/contracts/site.schema.json",
+  "title": "Mean Muffin marketing-site contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["framework", "deployment", "privacy_page", "security_page"],
+  "properties": {
+    "framework": { "const": "astro" },
+    "deployment": { "const": "github-pages" },
+    "privacy_page": { "const": "/privacy" },
+    "security_page": { "const": "/security" }
+  }
+}

@@ -1,0 +1,16 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+---
+<SiteLayout title="Security — Mean Muffin" description="Mean Muffin security architecture and browser automation trust boundaries.">
+  <header class="site-header shell"><a class="brand" href="/"><img src="/mean-muffin-mark.svg" width="46" height="46" alt="" /><span>Mean<span>Muffin</span></span></a><a class="button button-quiet" href="/">← Home</a></header>
+  <main class="legal shell section-pad">
+    <div class="eyebrow"><span></span> Security</div>
+    <h1>Automation without<br /><em>blurring trust boundaries.</em></h1>
+    <p class="legal-intro">Mean Muffin separates public/browser code, internal business logic, administrative services, persistence, and AI-provider credentials so a convenient browser workflow does not become an authorization shortcut.</p>
+    <section><h2>Browser content is untrusted</h2><p>URLs, DOM values, page text, comments, hidden fields, and model output are treated as data. They must not establish tenant, workspace, actor, or admin authority.</p></section>
+    <section><h2>Fail-closed server admission</h2><p>Authenticated and administrative services should reject traffic when shared-auth admission is unavailable rather than silently degrading to public access.</p></section>
+    <section><h2>Public vs. private clients</h2><p>The Chrome extension and other public clients consume browser-safe regular-scope APIs only. Server-only embeddings, admin operations, persistence internals, and provider credentials remain outside public bundles.</p></section>
+    <section><h2>Secrets</h2><p>Runtime secrets belong in server-side secret management. They should not be committed to this marketing site, emitted into client JavaScript, or stored in extension configuration.</p></section>
+    <section><h2>Report a security issue</h2><p>Use the Mean Muffin GitHub organization to reach maintainers until a dedicated security contact and private disclosure channel are published.</p></section>
+  </main>
+</SiteLayout>
