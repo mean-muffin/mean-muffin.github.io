@@ -17,6 +17,12 @@ pub enum ClassifyError {
     ReservedInternal,
 }
 
+/// Classify a normalized GET/HEAD path before any resource lookup.
+///
+/// # Errors
+///
+/// Returns `ClassifyError::InvalidPath` for non-normalized path input and
+/// `ClassifyError::ReservedInternal` for an unadmitted `/_/**` namespace.
 pub fn classify(_method: Method, path: &str) -> Result<Surface, ClassifyError> {
     if !path.starts_with('/')
         || path.contains('?')
@@ -62,6 +68,7 @@ pub struct Binding {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ResolveError {
+    Duplicate,
     Missing,
     SurfaceMismatch,
 }
@@ -72,18 +79,30 @@ pub struct Plan {
 }
 
 impl Plan {
-    #[must_use]
-    pub fn new(mut bindings: Vec<Binding>) -> Self {
+    /// Build an immutable route-key-to-execution-target plan.
+    ///
+    /// # Errors
+    ///
+    /// Returns `ResolveError::Duplicate` when two bindings claim the same route
+    /// key. Registration order never resolves an execution-placement conflict.
+    pub fn new(mut bindings: Vec<Binding>) -> Result<Self, ResolveError> {
         bindings.sort_by(|left, right| left.route_key.cmp(&right.route_key));
-        assert!(
-            bindings
-                .windows(2)
-                .all(|pair| pair[0].route_key != pair[1].route_key),
-            "duplicate route key"
-        );
-        Self { bindings }
+        if bindings
+            .windows(2)
+            .any(|pair| pair[0].route_key == pair[1].route_key)
+        {
+            return Err(ResolveError::Duplicate);
+        }
+        Ok(Self { bindings })
     }
 
+    /// Resolve a previously matched route key to its deployment target.
+    ///
+    /// # Errors
+    ///
+    /// Returns `ResolveError::Missing` for an unknown route key and
+    /// `ResolveError::SurfaceMismatch` if the caller presents a route key under
+    /// the wrong previously-classified web surface.
     pub fn resolve(&self, surface: Surface, route_key: &str) -> Result<&Target, ResolveError> {
         let index = self
             .bindings
@@ -155,7 +174,8 @@ mod tests {
                     origin_id: "web-origin".to_owned(),
                 },
             },
-        ]);
+        ])
+        .unwrap();
 
         assert!(matches!(
             plan.resolve(Surface::Page, "page:/").unwrap(),
@@ -169,6 +189,29 @@ mod tests {
             plan.resolve(Surface::Static, "surface:static").unwrap(),
             Target::Lambda { .. }
         ));
+    }
+
+    #[test]
+    fn duplicate_route_key_fails_closed() {
+        assert_eq!(
+            Plan::new(vec![
+                Binding {
+                    route_key: "page:/".to_owned(),
+                    surface: Surface::Page,
+                    target: Target::Standalone {
+                        origin_id: "a".to_owned(),
+                    },
+                },
+                Binding {
+                    route_key: "page:/".to_owned(),
+                    surface: Surface::Page,
+                    target: Target::Lambda {
+                        unit_id: "b".to_owned(),
+                    },
+                },
+            ]),
+            Err(ResolveError::Duplicate)
+        );
     }
 
     #[test]
