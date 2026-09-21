@@ -22,7 +22,9 @@ pub fn classify(_method: Method, path: &str) -> Result<Surface, ClassifyError> {
         || path.contains('?')
         || path.contains('#')
         || (path.len() > 1 && path.contains("//"))
-        || path.split('/').any(|segment| segment == "." || segment == "..")
+        || path
+            .split('/')
+            .any(|segment| segment == "." || segment == "..")
     {
         return Err(ClassifyError::InvalidPath);
     }
@@ -101,7 +103,10 @@ mod tests {
 
     #[test]
     fn surfaces_are_disjoint_before_resource_lookup() {
-        assert_eq!(classify(Method::Get, "/static/logo.svg"), Ok(Surface::Static));
+        assert_eq!(
+            classify(Method::Get, "/static/logo.svg"),
+            Ok(Surface::Static)
+        );
         assert_eq!(classify(Method::Head, "/_/docs/rpc"), Ok(Surface::Docs));
         assert_eq!(classify(Method::Get, "/users/42"), Ok(Surface::Page));
         assert_eq!(
@@ -112,7 +117,10 @@ mod tests {
 
     #[test]
     fn static_or_docs_miss_cannot_become_a_page() {
-        assert_eq!(classify(Method::Get, "/static/missing"), Ok(Surface::Static));
+        assert_eq!(
+            classify(Method::Get, "/static/missing"),
+            Ok(Surface::Static)
+        );
         assert_eq!(classify(Method::Get, "/_/docs/missing"), Ok(Surface::Docs));
     }
 
