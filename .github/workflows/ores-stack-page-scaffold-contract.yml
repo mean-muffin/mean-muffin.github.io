@@ -1,0 +1,79 @@
+name: ores-stack page scaffold contract
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ores-stack-page-scaffold-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  page-template:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust 1.88.0
+        run: |
+          rustup toolchain install 1.88.0 --profile minimal
+          rustup default 1.88.0
+      - name: Prove current page scaffold is not compile-ready
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          root="$RUNNER_TEMP/current-page"
+          mkdir -p "$root/src"
+          cat > "$root/Cargo.toml" <<'EOF'
+          [package]
+          name = "current-page-canary"
+          version = "0.0.0"
+          edition = "2021"
+          publish = false
+
+          [dependencies]
+          ores-api-docs-client = { git = "https://github.com/ORESoftware/api-docs.git", rev = "b94d92af2ed2d0c1a255cd37a7350746a3f22749", package = "ores-api-docs-client" }
+          ores-api-docs-macros = { git = "https://github.com/ORESoftware/api-docs.git", rev = "b94d92af2ed2d0c1a255cd37a7350746a3f22749", package = "ores-api-docs-macros" }
+          EOF
+          cat > "$root/src/main.rs" <<'EOF'
+          #[ores_page(renderer = "mash", delivery = "ssr_only", auth = "public")]
+          pub async fn page() {}
+
+          fn main() {}
+          EOF
+          if cargo +1.88.0 check --manifest-path "$root/Cargo.toml" >"$root/check.log" 2>&1; then
+            echo 'current page scaffold unexpectedly compiled' >&2
+            cat "$root/check.log" >&2
+            exit 1
+          fi
+          grep -E 'cannot find attribute `ores_page`|cannot find attribute' "$root/check.log"
+      - name: Prove canonical minimal page compiles
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          root="$RUNNER_TEMP/fixed-page"
+          mkdir -p "$root/src"
+          cat > "$root/Cargo.toml" <<'EOF'
+          [package]
+          name = "fixed-page-canary"
+          version = "0.0.0"
+          edition = "2021"
+          publish = false
+
+          [dependencies]
+          ores-api-docs-client = { git = "https://github.com/ORESoftware/api-docs.git", rev = "b94d92af2ed2d0c1a255cd37a7350746a3f22749", package = "ores-api-docs-client" }
+          ores-api-docs-macros = { git = "https://github.com/ORESoftware/api-docs.git", rev = "b94d92af2ed2d0c1a255cd37a7350746a3f22749", package = "ores-api-docs-macros" }
+          EOF
+          cat > "$root/src/main.rs" <<'EOF'
+          use ores_api_docs_client::{PageContext, PageDocument, PageResult};
+          use ores_api_docs_macros::ores_page;
+
+          #[ores_page(renderer = "mash", delivery = "ssr_only", auth = "public")]
+          pub async fn page(_ctx: PageContext) -> PageResult {
+              Ok(PageDocument::html("<main>TODO</main>"))
+          }
+
+          fn main() {}
+          EOF
+          cargo +1.88.0 check --manifest-path "$root/Cargo.toml"
