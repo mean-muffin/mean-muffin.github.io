@@ -24,14 +24,15 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Fetch exact ores-stack integration head anonymously
+      - name: Fetch exact ores-stack integration branch anonymously
         shell: bash
         run: |
           set -euo pipefail
           expected=38339982528d5a172ca8105d01a91d572a067952
+          source_branch=feat/ppr-supervisor-framing-integration-20260922
           git init ores-stack
           git -C ores-stack remote add origin https://github.com/ORESoftware/ores-stack.git
-          git -C ores-stack fetch --depth=1 origin "$expected"
+          git -C ores-stack fetch --depth=1 origin "$source_branch"
           git -C ores-stack checkout --detach FETCH_HEAD
           actual="$(git -C ores-stack rev-parse HEAD)"
           test "$actual" = "$expected"
@@ -77,14 +78,15 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Fetch exact ores-stack integration head anonymously
+      - name: Fetch exact ores-stack integration branch anonymously
         shell: bash
         run: |
           set -euo pipefail
           expected=38339982528d5a172ca8105d01a91d572a067952
+          source_branch=feat/ppr-supervisor-framing-integration-20260922
           git init ores-stack
           git -C ores-stack remote add origin https://github.com/ORESoftware/ores-stack.git
-          git -C ores-stack fetch --depth=1 origin "$expected"
+          git -C ores-stack fetch --depth=1 origin "$source_branch"
           git -C ores-stack checkout --detach FETCH_HEAD
           actual="$(git -C ores-stack rev-parse HEAD)"
           test "$actual" = "$expected"
