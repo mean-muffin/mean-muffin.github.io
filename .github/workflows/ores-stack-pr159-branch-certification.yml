@@ -12,7 +12,7 @@ permissions:
 jobs:
   branch-certification:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - name: Install Rust 1.88.0
@@ -25,13 +25,19 @@ jobs:
           set -Eeuo pipefail
           git clone --depth 1 --branch feat/scaffold-create-cross-check-20260921 \
             https://github.com/ORESoftware/ores-stack.git "$RUNNER_TEMP/ores-stack"
-          test "$(git -C "$RUNNER_TEMP/ores-stack" rev-parse HEAD)" = "9f4f0f00305f7d655aac889d3f5fa625741c0708"
-      - name: Run scaffold CLI unit tests
+          test "$(git -C "$RUNNER_TEMP/ores-stack" rev-parse HEAD)" = "1848f80bcc9e05b406d4ad782084e88286fd3779"
+      - name: Run scaffold CLI safety tests
         shell: bash
         run: |
           set -Eeuo pipefail
           cd "$RUNNER_TEMP/ores-stack"
-          cargo +1.88.0 test -p ores-stack-cli scaffold_cli::tests
+          cargo +1.88.0 test -p ores-stack-cli --test scaffold_cli_safety -- --nocapture
+      - name: Compile generated page and REST route fixtures
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd "$RUNNER_TEMP/ores-stack"
+          cargo +1.88.0 test -p ores-stack-cli --test scaffold_cli_compile_contract -- --nocapture
       - name: Check CLI crate
         shell: bash
         run: |
