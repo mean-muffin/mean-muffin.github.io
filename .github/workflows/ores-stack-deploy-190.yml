@@ -20,13 +20,17 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Checkout exact ores-stack PR head
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          repository: ORESoftware/ores-stack
-          ref: 0a28b5e250e0926ca18c397f496c7b53aebb19e1
-          path: ores-stack
-          persist-credentials: false
+      - name: Fetch exact ores-stack PR head anonymously
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected=0a28b5e250e0926ca18c397f496c7b53aebb19e1
+          git init ores-stack
+          git -C ores-stack remote add origin https://github.com/ORESoftware/ores-stack.git
+          git -C ores-stack fetch --depth=1 origin "$expected"
+          git -C ores-stack checkout --detach FETCH_HEAD
+          actual="$(git -C ores-stack rev-parse HEAD)"
+          test "$actual" = "$expected"
 
       - name: Rust 1.88
         run: |
@@ -44,7 +48,7 @@ jobs:
 
       - name: Shared JSON propagation regression
         working-directory: ores-stack
-        run: cargo test -p ores-stack-cli deploy_receives_resolved_shared_json_output_mode -- --exact
+        run: cargo test -p ores-stack-cli deploy_receives_resolved_shared_json_output_mode
 
       - name: Deploy integrity regressions
         working-directory: ores-stack
