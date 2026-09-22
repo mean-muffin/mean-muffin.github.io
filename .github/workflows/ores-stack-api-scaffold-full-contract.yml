@@ -114,7 +114,7 @@ jobs:
               let context = TypedOperationContext::<crate::AppState, GetV1UsersOperation>::new(base, request);
               match handlers::__ores_invoke_get_v1_users(context).await {
                   Ok(()) => StatusCode::NO_CONTENT.into_response(),
-                  Err(()) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+                  Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
               }
           }
           EOF
