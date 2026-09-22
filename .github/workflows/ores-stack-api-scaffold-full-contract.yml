@@ -1,0 +1,121 @@
+name: ores-stack API scaffold full contract
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ores-stack-api-scaffold-full-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-api-leaf:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust 1.88.0
+        run: |
+          rustup toolchain install 1.88.0 --profile minimal
+          rustup default 1.88.0
+      - name: Compile corrected handlers.rs plus route.rs
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          root="$RUNNER_TEMP/full-api-leaf"
+          mkdir -p "$root/src/leaf"
+          cat > "$root/Cargo.toml" <<'EOF'
+          [package]
+          name = "full-api-leaf-canary"
+          version = "0.0.0"
+          edition = "2021"
+          publish = false
+
+          [dependencies]
+          axum = "0.8"
+          ores-api-docs = { git = "https://github.com/ORESoftware/api-docs.git", rev = "b94d92af2ed2d0c1a255cd37a7350746a3f22749", package = "ores-api-docs", default-features = false, features = ["operation-runtime"] }
+          ores-api-docs-operation-macros = { git = "https://github.com/ORESoftware/api-docs.git", rev = "b94d92af2ed2d0c1a255cd37a7350746a3f22749", package = "ores-api-docs-operation-macros" }
+          EOF
+          cat > "$root/src/main.rs" <<'EOF'
+          #[derive(Clone)]
+          pub struct AppState;
+
+          mod leaf {
+              pub mod handlers;
+              pub mod route;
+          }
+
+          fn main() {
+              let _ = leaf::route::router();
+          }
+          EOF
+          cat > "$root/src/leaf/handlers.rs" <<'EOF'
+          use ores_api_docs::{NoSection, OperationSpec, RpcPayloadCodec, TypedOperationContext};
+          use ores_api_docs_operation_macros::ores_operation;
+
+          pub struct GetV1UsersOperation;
+
+          impl OperationSpec for GetV1UsersOperation {
+              type Path = NoSection;
+              type Query = NoSection;
+              type RequestHeaders = NoSection;
+              type RequestBody = NoSection;
+              type ResponseBody = ();
+              type ResponseHeaders = NoSection;
+              type ResponseTrailers = NoSection;
+              type Error = ();
+              const KEY: &'static str = "demo.get_v1_users";
+              const CODECS: &'static [RpcPayloadCodec] = &[RpcPayloadCodec::Json];
+              const DEFAULT_CODEC: RpcPayloadCodec = RpcPayloadCodec::Json;
+          }
+
+          #[ores_operation(
+              spec = GetV1UsersOperation,
+              key = "demo.get_v1_users",
+              codecs("json"),
+              default_codec = "json",
+              audiences("server"),
+              scope = "regular"
+          )]
+          pub async fn get_v1_users(
+              _ctx: TypedOperationContext<crate::AppState, GetV1UsersOperation>,
+          ) -> Result<(), ()> {
+              todo!("implement demo.get_v1_users")
+          }
+          EOF
+          cat > "$root/src/leaf/route.rs" <<'EOF'
+          use axum::{
+              extract::State,
+              http::StatusCode,
+              response::{IntoResponse, Response},
+              routing::get as axum_get,
+              Router,
+          };
+          use ores_api_docs::{
+              NoSection, OperationContext, OperationRequestData, RpcPayloadCodec, TypedOperationContext,
+          };
+          use ores_api_docs_operation_macros::ores_route;
+
+          use super::handlers::{self, GetV1UsersOperation};
+
+          pub(crate) fn router() -> Router<crate::AppState> {
+              Router::new().route("/v1/users", axum_get(get))
+          }
+
+          #[ores_route(operation = handlers::get_v1_users)]
+          pub async fn get(State(state): State<crate::AppState>) -> Response {
+              let request = OperationRequestData::new(RpcPayloadCodec::Json);
+              request.insert_path::<GetV1UsersOperation>(NoSection);
+              request.insert_query::<GetV1UsersOperation>(NoSection);
+              request.insert_headers::<GetV1UsersOperation>(NoSection);
+              request.insert_body::<GetV1UsersOperation>(NoSection);
+              let base = OperationContext::http(state);
+              let context = TypedOperationContext::<crate::AppState, GetV1UsersOperation>::new(base, request);
+              match handlers::__ores_invoke_get_v1_users(context).await {
+                  Ok(()) => StatusCode::NO_CONTENT.into_response(),
+                  Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+              }
+          }
+          EOF
+          cargo +1.88.0 check --manifest-path "$root/Cargo.toml"

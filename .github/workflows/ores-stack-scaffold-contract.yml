@@ -1,0 +1,173 @@
+name: ores-stack scaffold contract
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ores-stack-scaffold-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  typed-operation-context:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust 1.88.0
+        run: |
+          rustup toolchain install 1.88.0 --profile minimal
+          rustup default 1.88.0
+      - name: Prove current scaffold constructor is rejected
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          root="$RUNNER_TEMP/current-scaffold"
+          mkdir -p "$root/src"
+          cat > "$root/Cargo.toml" <<'EOF'
+          [package]
+          name = "current-scaffold-canary"
+          version = "0.0.0"
+          edition = "2021"
+          publish = false
+
+          [dependencies]
+          ores-api-docs = { git = "https://github.com/ORESoftware/api-docs.git", rev = "b94d92af2ed2d0c1a255cd37a7350746a3f22749", package = "ores-api-docs", default-features = false, features = ["operation-runtime"] }
+          EOF
+          cat > "$root/src/main.rs" <<'EOF'
+          use ores_api_docs::{NoSection, OperationRequestData, OperationSpec, RpcPayloadCodec, TypedOperationContext};
+
+          #[derive(Clone)]
+          struct AppState;
+
+          struct DemoOperation;
+          impl OperationSpec for DemoOperation {
+              type Path = NoSection;
+              type Query = NoSection;
+              type RequestHeaders = NoSection;
+              type RequestBody = NoSection;
+              type ResponseBody = ();
+              type ResponseHeaders = NoSection;
+              type ResponseTrailers = NoSection;
+              type Error = ();
+              const KEY: &'static str = "canary.demo";
+          }
+
+          fn main() {
+              let state = AppState;
+              let request = OperationRequestData::new(RpcPayloadCodec::Json);
+              request.insert_path::<DemoOperation>(NoSection);
+              request.insert_query::<DemoOperation>(NoSection);
+              request.insert_headers::<DemoOperation>(NoSection);
+              request.insert_body::<DemoOperation>(NoSection);
+              let _context = TypedOperationContext::<AppState, DemoOperation>::new(state, request);
+          }
+          EOF
+          if cargo +1.88.0 check --manifest-path "$root/Cargo.toml" >"$root/check.log" 2>&1; then
+            echo 'current scaffold unexpectedly compiled' >&2
+            cat "$root/check.log" >&2
+            exit 1
+          fi
+          grep -F 'expected `OperationContext<AppState>`, found `AppState`' "$root/check.log"
+      - name: Prove current OperationSpec is incomplete
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          root="$RUNNER_TEMP/missing-codecs"
+          mkdir -p "$root/src"
+          cat > "$root/Cargo.toml" <<'EOF'
+          [package]
+          name = "missing-codecs-canary"
+          version = "0.0.0"
+          edition = "2021"
+          publish = false
+
+          [dependencies]
+          ores-api-docs = { git = "https://github.com/ORESoftware/api-docs.git", rev = "b94d92af2ed2d0c1a255cd37a7350746a3f22749", package = "ores-api-docs", default-features = false, features = ["operation-runtime"] }
+          EOF
+          cat > "$root/src/main.rs" <<'EOF'
+          use ores_api_docs::{NoSection, OperationContext, OperationRequestData, OperationSpec, RpcPayloadCodec, TypedOperationContext};
+
+          #[derive(Clone)]
+          struct AppState;
+
+          struct DemoOperation;
+          impl OperationSpec for DemoOperation {
+              type Path = NoSection;
+              type Query = NoSection;
+              type RequestHeaders = NoSection;
+              type RequestBody = NoSection;
+              type ResponseBody = ();
+              type ResponseHeaders = NoSection;
+              type ResponseTrailers = NoSection;
+              type Error = ();
+              const KEY: &'static str = "canary.demo";
+          }
+
+          fn main() {
+              let state = AppState;
+              let request = OperationRequestData::new(RpcPayloadCodec::Json);
+              request.insert_path::<DemoOperation>(NoSection);
+              request.insert_query::<DemoOperation>(NoSection);
+              request.insert_headers::<DemoOperation>(NoSection);
+              request.insert_body::<DemoOperation>(NoSection);
+              let base = OperationContext::http(state);
+              let _context = TypedOperationContext::<AppState, DemoOperation>::new(base, request);
+          }
+          EOF
+          if cargo +1.88.0 check --manifest-path "$root/Cargo.toml" >"$root/check.log" 2>&1; then
+            echo 'incomplete OperationSpec unexpectedly compiled' >&2
+            cat "$root/check.log" >&2
+            exit 1
+          fi
+          grep -F 'missing: `CODECS`, `DEFAULT_CODEC`' "$root/check.log"
+      - name: Prove corrected minimal scaffold compiles
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          root="$RUNNER_TEMP/fixed-scaffold"
+          mkdir -p "$root/src"
+          cat > "$root/Cargo.toml" <<'EOF'
+          [package]
+          name = "fixed-scaffold-canary"
+          version = "0.0.0"
+          edition = "2021"
+          publish = false
+
+          [dependencies]
+          ores-api-docs = { git = "https://github.com/ORESoftware/api-docs.git", rev = "b94d92af2ed2d0c1a255cd37a7350746a3f22749", package = "ores-api-docs", default-features = false, features = ["operation-runtime"] }
+          EOF
+          cat > "$root/src/main.rs" <<'EOF'
+          use ores_api_docs::{NoSection, OperationContext, OperationRequestData, OperationSpec, RpcPayloadCodec, TypedOperationContext};
+
+          #[derive(Clone)]
+          struct AppState;
+
+          struct DemoOperation;
+          impl OperationSpec for DemoOperation {
+              type Path = NoSection;
+              type Query = NoSection;
+              type RequestHeaders = NoSection;
+              type RequestBody = NoSection;
+              type ResponseBody = ();
+              type ResponseHeaders = NoSection;
+              type ResponseTrailers = NoSection;
+              type Error = ();
+              const KEY: &'static str = "canary.demo";
+              const CODECS: &'static [RpcPayloadCodec] = &[RpcPayloadCodec::Json];
+              const DEFAULT_CODEC: RpcPayloadCodec = RpcPayloadCodec::Json;
+          }
+
+          fn main() {
+              let state = AppState;
+              let request = OperationRequestData::new(RpcPayloadCodec::Json);
+              request.insert_path::<DemoOperation>(NoSection);
+              request.insert_query::<DemoOperation>(NoSection);
+              request.insert_headers::<DemoOperation>(NoSection);
+              request.insert_body::<DemoOperation>(NoSection);
+              let base = OperationContext::http(state);
+              let _context = TypedOperationContext::<AppState, DemoOperation>::new(base, request);
+          }
+          EOF
+          cargo +1.88.0 check --manifest-path "$root/Cargo.toml"
