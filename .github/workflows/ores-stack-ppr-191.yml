@@ -1,0 +1,55 @@
+name: ores-stack-ppr-191
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/ores-stack-ppr-191.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rust:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - name: Checkout harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Checkout exact ores-stack P2 head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: ORESoftware/ores-stack
+          ref: 1c22befc3a5fb71dd0b077d475cfcaa11606b8d5
+          path: ores-stack
+          persist-credentials: false
+
+      - name: Rust 1.88
+        run: |
+          rustup toolchain install 1.88.0 --profile minimal --no-self-update
+          rustup default 1.88.0
+          rustup component add rustfmt
+
+      - name: Cargo format
+        working-directory: ores-stack
+        run: cargo fmt --all -- --check
+
+      - name: Cargo check PPR crates
+        working-directory: ores-stack
+        run: cargo check -p ores-stack-process-tree -p ores-stack-middleware-runner
+
+      - name: Process-tree tests
+        working-directory: ores-stack
+        run: cargo test -p ores-stack-process-tree
+
+      - name: Middleware-runner protocol tests
+        working-directory: ores-stack
+        run: cargo test -p ores-stack-middleware-runner
