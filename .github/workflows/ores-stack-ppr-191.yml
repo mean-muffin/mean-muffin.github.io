@@ -1,0 +1,65 @@
+name: ores-stack-ppr-191
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/ores-stack-ppr-191.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rust:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - name: Checkout harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Fetch exact ores-stack P2 head anonymously
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected=1c22befc3a5fb71dd0b077d475cfcaa11606b8d5
+          git init ores-stack
+          git -C ores-stack remote add origin https://github.com/ORESoftware/ores-stack.git
+          git -C ores-stack fetch --depth=1 origin "$expected"
+          git -C ores-stack checkout --detach FETCH_HEAD
+          actual="$(git -C ores-stack rev-parse HEAD)"
+          test "$actual" = "$expected"
+
+      - name: Rust 1.88
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.88.0 --profile minimal --no-self-update
+          rustup default 1.88.0
+          rustup component add rustfmt
+
+      - name: Cargo format
+        shell: bash
+        working-directory: ores-stack
+        run: cargo fmt --all -- --check
+
+      - name: Cargo check PPR crates
+        shell: bash
+        working-directory: ores-stack
+        run: cargo check -p ores-stack-process-tree -p ores-stack-middleware-runner
+
+      - name: Process-tree tests
+        shell: bash
+        working-directory: ores-stack
+        run: cargo test -p ores-stack-process-tree
+
+      - name: Middleware-runner protocol tests
+        shell: bash
+        working-directory: ores-stack
+        run: cargo test -p ores-stack-middleware-runner
