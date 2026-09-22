@@ -1,0 +1,46 @@
+name: ores-stack PR159 branch certification
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ores-stack-pr159-branch-certification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  branch-certification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust 1.88.0
+        run: |
+          rustup toolchain install 1.88.0 --profile minimal
+          rustup default 1.88.0
+      - name: Clone exact ores-stack PR branch
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git clone --depth 1 --branch feat/scaffold-create-cross-check-20260921 \
+            https://github.com/ORESoftware/ores-stack.git "$RUNNER_TEMP/ores-stack"
+          test "$(git -C "$RUNNER_TEMP/ores-stack" rev-parse HEAD)" = "9f4f0f00305f7d655aac889d3f5fa625741c0708"
+      - name: Run scaffold CLI unit tests
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd "$RUNNER_TEMP/ores-stack"
+          cargo +1.88.0 test -p ores-stack-cli scaffold_cli::tests
+      - name: Check CLI crate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd "$RUNNER_TEMP/ores-stack"
+          cargo +1.88.0 check -p ores-stack-cli
+      - name: Run CLI standardization gate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          cd "$RUNNER_TEMP/ores-stack"
+          bash scripts/check-cli-standardization.sh
